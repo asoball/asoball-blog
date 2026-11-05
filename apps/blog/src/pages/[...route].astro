@@ -1,0 +1,144 @@
+---
+import Base from "../layouts/Base.astro";
+import Listing from "../components/Listing.astro";
+import Article from "../components/Article.astro";
+import { posts, snapshot } from "../lib/content";
+import { PAGE_SIZE, type PublicPost } from "@asoball/content-contract";
+import { site } from "../site.config";
+type Props =
+  | { kind: "article"; post: PublicPost }
+  | {
+      kind: "list";
+      title: string;
+      description?: string;
+      items: PublicPost[];
+      page: number;
+      total: number;
+      base: string;
+    }
+  | { kind: "categories" | "about" };
+export function getStaticPaths() {
+  const routes: { params: { route: string }; props: Props }[] = [];
+  const list = (
+    base: string,
+    title: string,
+    items: PublicPost[],
+    description?: string,
+  ) => {
+    const total = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+    for (let page = 1; page <= total; page++)
+      routes.push({
+        params: { route: page === 1 ? base : `${base}/page/${page}` },
+        props: {
+          kind: "list",
+          title,
+          description,
+          items: items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+          page,
+          total,
+          base: `/${base}/`,
+        },
+      });
+  };
+  list("posts", "全部文章", posts, "依時間整理的技術筆記與實作紀錄。");
+  for (const category of snapshot.categories)
+    list(
+      `categories/${category.slug}`,
+      category.name,
+      posts.filter((post) => post.category?.slug === category.slug),
+      category.description,
+    );
+  for (const tag of snapshot.tags)
+    list(
+      `tags/${tag.slug}`,
+      `#${tag.name}`,
+      posts.filter((post) => post.tags.some((item) => item.slug === tag.slug)),
+    );
+  for (const post of posts)
+    routes.push({
+      params: { route: `posts/${post.slug}` },
+      props: { kind: "article", post },
+    });
+  routes.push(
+    { params: { route: "categories" }, props: { kind: "categories" } },
+    { params: { route: "about" }, props: { kind: "about" } },
+  );
+  return routes;
+}
+const props = Astro.props as Props;
+const title =
+  props.kind === "article"
+    ? props.post.seo.title
+    : props.kind === "list"
+      ? props.title
+      : props.kind === "about"
+        ? "關於"
+        : "文章分類";
+const description =
+  props.kind === "article"
+    ? props.post.seo.description
+    : props.kind === "list"
+      ? props.description
+      : undefined;
+const noindex = props.kind === "list" && props.items.length === 0;
+---
+
+<Base
+  title={title}
+  description={description}
+  image={props.kind === "article" ? props.post.cover?.url : undefined}
+  noindex={noindex}
+>
+  {props.kind === "article" && <Article post={props.post} allPosts={posts} />}
+  {props.kind === "list" && (
+    <Listing
+      title={props.title}
+      description={props.description}
+      posts={props.items}
+      page={props.page}
+      total={props.total}
+      base={props.base}
+    >
+      {props.base === "/posts/" && (
+        <nav class="taxonomy-links" aria-label="分類篩選">
+          <a href="/posts/" aria-current="page">
+            全部
+          </a>
+          {snapshot.categories.map((category) => (
+            <a href={`/categories/${category.slug}/`}>{category.name}</a>
+          ))}
+        </nav>
+      )}
+    </Listing>
+  )}
+  {props.kind === "categories" && (
+    <>
+      <header class="page-heading">
+        <p class="eyebrow">TOPICS</p>
+        <h1>文章分類</h1>
+        <p>依主題尋找文章。</p>
+      </header>
+      <ul class="category-list">
+        {snapshot.categories.map((category) => (
+          <li>
+            <a href={`/categories/${category.slug}/`}>{category.name}</a>
+            <p>{category.description}</p>
+            <span class="meta">
+              {
+                posts.filter((post) => post.category?.slug === category.slug)
+                  .length
+              }{" "}
+              篇文章
+            </span>
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
+  {props.kind === "about" && (
+    <section class="prose">
+      <h1>關於</h1>
+      <p>{site.about}</p>
+    </section>
+  )}
+</Base>

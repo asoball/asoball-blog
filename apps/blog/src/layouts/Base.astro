@@ -1,0 +1,60 @@
+---
+import "../styles/global.css";
+import "../styles/components.css";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { site } from "../site.config";
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+  canonicalPath?: string;
+}
+const {
+  title = site.name,
+  description = site.description,
+  image = "/og.png",
+  noindex = false,
+  canonicalPath = Astro.url.pathname,
+} = Astro.props;
+const canonical = new URL(canonicalPath, Astro.site || Astro.url.origin);
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title===site.name?title:`${title} · ${site.name}`}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={new URL(image, canonical)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="robots" content={noindex ? "noindex,follow" : "index,follow"} />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={site.name}
+      href="/rss.xml"
+    />
+    <script is:inline>
+      try {
+        const theme = localStorage.getItem("theme");
+        if (theme === "light" || theme === "dark")
+          document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <SiteHeader />
+    <main id="main-content" class="container" tabindex="-1">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

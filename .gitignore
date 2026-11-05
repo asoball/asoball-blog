@@ -1,0 +1,69 @@
+# Dependencies and generated build/type outputs
+node_modules/
+.pnpm-store/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Runtime secrets and local persistent data (keep sanitized examples)
+.env
+.env.*
+!.env.example
+.envrc
+*.key
+*.pem
+*.p12
+*.pfx
+credentials.json
+application_default_credentials.json
+*-credentials.json
+*-service-account.json
+*-firebase-adminsdk-*.json
+
+# Local PoCs and visual test artifacts (including baselines)
+/poc/
+/apps/blog/tests/visual/
+
+# Test outputs
+test-results/
+playwright-report/
+.astro/
+**/.astro/
+.local/
+.tools/
+
+# Infrastructure local state, plans, credentials and tool caches
+.terraform/
+*.tfstate*
+*.tfplan
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+.terraformrc
+terraform.rc
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+.lighthouseci/
+.snapshots/
+
+# Logs and local caches
+*.log
+*.log.*
+.cache/
+.turbo/
+.eslintcache
+.stylelintcache
+
+# Machine-specific editor/OS files
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini

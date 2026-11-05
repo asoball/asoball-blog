@@ -1,0 +1,33 @@
+---
+import type { TocItem } from "@asoball/content-contract/render";
+interface Props {
+  items: TocItem[];
+}
+const { items } = Astro.props;
+---
+
+{items.length > 0 && (
+  <details class="toc">
+    <summary>本文目錄</summary>
+    <nav aria-label="本文目錄">
+      <ul>
+        {items.map((item) => (
+          <li class:list={{ "level-3": item.level === 3 }}>
+            <a href={`#${item.id}`}>{item.text}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </details>
+)}
+<script>
+  const toc = document.querySelector<HTMLDetailsElement>(".toc");
+  if (toc) {
+    const query = matchMedia("(min-width:1024px)");
+    const sync = () => {
+      toc.open = query.matches;
+    };
+    sync();
+    query.addEventListener("change", sync);
+  }
+</script>

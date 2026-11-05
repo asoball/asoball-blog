@@ -1,0 +1,26 @@
+---
+import { site } from "../site.config";
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div>
+      <a class="wordmark" href="/">
+        {site.name}
+      </a>
+      <p>{site.description}</p>
+    </div>
+    <div class="footer-links">
+      <a href="/posts/">文章</a>
+      <a href="/rss.xml">RSS</a>
+      {site.github && (
+        <a href={site.github} rel="noopener noreferrer">
+          GitHub
+        </a>
+      )}
+      <span>
+        © {new Date().getUTCFullYear()} {site.name}
+      </span>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,33 @@
+<label class="theme-control" hidden>
+  <span aria-hidden="true">◐</span>
+  <span class="sr-only">顏色主題</span>
+  <select aria-label="顏色主題">
+    <option value="system">系統</option>
+    <option value="light">淺色</option>
+    <option value="dark">深色</option>
+  </select>
+</label>
+<script>
+  const label = document.querySelector<HTMLLabelElement>(".theme-control");
+  const select = label?.querySelector("select");
+  if (label && select) {
+    label.hidden = false;
+    try {
+      const preference = localStorage.getItem("theme");
+      select.value =
+        preference === "light" || preference === "dark" ? preference : "system";
+    } catch {
+      /* Browser privacy settings: retain system. */
+    }
+    select.addEventListener("change", () => {
+      const value = select.value;
+      if (value === "system") delete document.documentElement.dataset.theme;
+      else document.documentElement.dataset.theme = value;
+      try {
+        localStorage.setItem("theme", value);
+      } catch {
+        /* In-memory theme still works. */
+      }
+    });
+  }
+</script>

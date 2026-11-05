@@ -1,0 +1,18 @@
+{
+  "name": "@asoball/publishing",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./snapshot": "./src/snapshot.ts",
+    "./queue": "./src/queue.ts",
+    "./worker": "./src/worker.ts"
+  },
+  "dependencies": {
+    "@asoball/content-contract": "workspace:*",
+    "mongodb": "6.20.0",
+    "sharp": "0.35.5",
+    "@google-cloud/storage": "8.4.0"
+  }
+}

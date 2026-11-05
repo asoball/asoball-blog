@@ -1,0 +1,36 @@
+---
+import { site } from "../site.config";
+import MobileNav from "./MobileNav.astro";
+import ThemeSwitcher from "./ThemeSwitcher.astro";
+const path = Astro.url.pathname;
+---
+
+<a class="skip-link" href="#main-content">
+  跳至主要內容
+</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="wordmark" href="/">
+      {site.name}
+      <span aria-hidden="true">.</span>
+    </a>
+    <div class="header-actions">
+      <nav class="desktop-nav" aria-label="主要導覽">
+        {[
+          ["/posts/", "文章"],
+          ["/categories/", "分類"],
+          ["/about/", "關於"],
+        ].map(([href, label]) => (
+          <a
+            href={href}
+            aria-current={path.startsWith(href) ? "page" : undefined}
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+      <ThemeSwitcher />
+      <MobileNav />
+    </div>
+  </div>
+</header>

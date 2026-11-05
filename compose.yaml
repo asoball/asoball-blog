@@ -1,0 +1,68 @@
+name: asoball-blog
+
+services:
+  cms:
+    profiles: [cms]
+    build:
+      context: .
+      dockerfile: apps/cms/Dockerfile
+    image: asoball-blog-cms:local
+    env_file: apps/cms/.env
+    environment:
+      DATABASE_URI: mongodb://mongodb:27017/asoball_blog_docker?replicaSet=rs0&directConnection=true
+      CMS_URL: http://127.0.0.1:3001
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      LOCAL_DATA_DIR: /data
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - ./.local/docker:/data
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+  mongodb:
+    image: mongo:8.0.16@sha256:4b58ebcb1dc7a7b4e84cd8ce9098d48764ae4478876898ff9551acf2ac4a6a6d
+    command:
+      ["mongod", "--replSet", "rs0", "--bind_ip_all", "--oplogSize", "128"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - ./infrastructure/local/mongodb-healthcheck.js:/opt/mongodb-healthcheck.js:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "--quiet",
+          "--host",
+          "127.0.0.1",
+          "--file",
+          "/opt/mongodb-healthcheck.js",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  mongodb-data:

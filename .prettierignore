@@ -1,0 +1,9 @@
+node_modules/
+**/node_modules/
+**/.next/
+**/.astro/
+**/dist/
+**/payload-types.ts
+**/next-env.d.ts
+**/importMap.js
+pnpm-lock.yaml

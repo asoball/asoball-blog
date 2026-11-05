@@ -1,0 +1,54 @@
+---
+import { dateLabel, type PublicPost } from "@asoball/content-contract";
+interface Props {
+  post: PublicPost;
+  eager?: boolean;
+}
+const { post, eager = false } = Astro.props;
+---
+
+<article class:list={["article-card", { "with-cover": post.cover }]}>
+  {post.cover && (
+    <a
+      class="card-cover"
+      href={`/posts/${post.slug}/`}
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <img
+        src={post.cover.url}
+        alt={post.cover.alt}
+        width={post.cover.width}
+        height={post.cover.height}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+      />
+    </a>
+  )}
+  {!post.cover && (
+    <div class="card-placeholder" aria-hidden="true">
+      <span>TECHNICAL NOTES</span>
+      <strong>{post.category?.name || "技術筆記"}</strong>
+    </div>
+  )}
+  <div class="card-body">
+    <div class="meta">
+      {post.category && (
+        <a href={`/categories/${post.category.slug}/`}>{post.category.name}</a>
+      )}
+      <span aria-hidden="true">·</span>
+      <time datetime={post.publishedAt}>{dateLabel(post.publishedAt)}</time>
+    </div>
+    <h2>
+      <a href={`/posts/${post.slug}/`}>{post.title}</a>
+    </h2>
+    <p>{post.excerpt}</p>
+    <ul class="tags" aria-label="文章標籤">
+      {post.tags.map((tag) => (
+        <li>
+          <a href={`/tags/${tag.slug}/`}>#{tag.name}</a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</article>

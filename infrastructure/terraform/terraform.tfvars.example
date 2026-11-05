@@ -1,0 +1,5 @@
+project_id        = "REPLACE_WITH_TEST_PROJECT"
+github_repository = "REPLACE_OWNER/REPLACE_REPOSITORY"
+cms_image         = "asia-east1-docker.pkg.dev/REPLACE_PROJECT/REPLACE_REPOSITORY/cms@sha256:REPLACE_WITH_64_HEX_DIGEST"
+cms_url           = "https://REPLACE_TEST_CMS_URL"
+public_cms_login  = false

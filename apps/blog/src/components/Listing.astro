@@ -1,0 +1,34 @@
+---
+import type { PublicPost } from "@asoball/content-contract";
+import ArticleCard from "./ArticleCard.astro";
+import Pagination from "./Pagination.astro";
+interface Props {
+  title: string;
+  description?: string;
+  posts: PublicPost[];
+  page: number;
+  total: number;
+  base: string;
+}
+const { title, description, posts, page, total, base } = Astro.props;
+---
+
+<header class="page-heading">
+  <p class="eyebrow">ARTICLE INDEX</p>
+  <h1>{title}</h1>
+  {description && <p>{description}</p>}
+</header>
+<slot />
+{posts.length ? (
+  <div class="article-grid">
+    {posts.map((post, i) => (
+      <ArticleCard post={post} eager={i < 2} />
+    ))}
+  </div>
+) : (
+  <div class="empty-state">
+    <p>目前沒有文章</p>
+    <a href="/posts/">返回文章列表</a>
+  </div>
+)}
+<Pagination page={page} total={total} base={base} />

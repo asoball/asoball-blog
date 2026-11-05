@@ -1,0 +1,118 @@
+---
+import {
+  dateLabel,
+  readingMinutes,
+  type PublicPost,
+} from "@asoball/content-contract";
+import { renderContent } from "@asoball/content-contract/render";
+import TableOfContents from "./TableOfContents.astro";
+import ArticleCard from "./ArticleCard.astro";
+interface Props {
+  post: PublicPost;
+  allPosts: PublicPost[];
+}
+const { post, allPosts } = Astro.props;
+const rendered = await renderContent(post.content.root);
+if (rendered.warnings.length)
+  console.warn(
+    `Unsupported content nodes in ${post.slug}: ${[...new Set(rendered.warnings)].join(",")}`,
+  );
+const related = allPosts
+  .filter(
+    (other) =>
+      other.id !== post.id &&
+      (other.category?.slug === post.category?.slug ||
+        other.tags.some((tag) =>
+          post.tags.some((own) => own.slug === tag.slug),
+        )),
+  )
+  .slice(0, 3);
+---
+
+<nav class="breadcrumbs" aria-label="麵包屑">
+  <a href="/">首頁</a>
+  <span aria-hidden="true">/</span>
+  <a href="/posts/">文章</a>
+</nav>
+<article>
+  <header class="article-header">
+    {post.category && (
+      <a href={`/categories/${post.category.slug}/`}>{post.category.name}</a>
+    )}
+    <h1>{post.title}</h1>
+    {post.excerpt && <p class="excerpt">{post.excerpt}</p>}
+    <div class="meta">
+      <time datetime={post.publishedAt}>{dateLabel(post.publishedAt)}</time>
+      {post.updatedAt !== post.publishedAt && (
+        <span>
+          更新{" "}
+          <time datetime={post.updatedAt}>{dateLabel(post.updatedAt)}</time>
+        </span>
+      )}
+      <span>約 {readingMinutes(post)} 分鐘閱讀</span>
+    </div>
+    <ul class="tags" aria-label="文章標籤">
+      {post.tags.map((tag) => (
+        <li>
+          <a href={`/tags/${tag.slug}/`}>#{tag.name}</a>
+        </li>
+      ))}
+    </ul>
+  </header>
+  <div class="article-layout">
+    <TableOfContents items={rendered.toc} />
+    <div class="prose">
+      {post.cover && (
+        <figure>
+          <img
+            src={post.cover.url}
+            alt={post.cover.alt}
+            width={post.cover.width}
+            height={post.cover.height}
+            loading="eager"
+          />
+        </figure>
+      )}
+      <Fragment set:html={rendered.html} />
+      <footer class="article-end">
+        <a href="/posts/">← 返回文章列表</a>
+      </footer>
+    </div>
+  </div>
+</article>
+{related.length > 0 && (
+  <section>
+    <div class="section-heading">
+      <h2>相關文章</h2>
+    </div>
+    <div class="article-grid">
+      {related.map((other) => (
+        <ArticleCard post={other} />
+      ))}
+    </div>
+  </section>
+)}
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>(
+    ".copy-code",
+  )) {
+    button.hidden = false;
+    button.addEventListener("click", async () => {
+      const code = button.closest(".code-block")?.querySelector("code");
+      const status = button.parentElement?.querySelector(".copy-status");
+      if (!code || !status) return;
+      try {
+        if (!navigator.clipboard) throw new Error("Clipboard unavailable");
+        await navigator.clipboard.writeText(code.textContent || "");
+        status.textContent = "已複製";
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(code);
+        const selection = getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        status.textContent = "已選取，請按 Ctrl+C／⌘C";
+      }
+    });
+  }
+</script>

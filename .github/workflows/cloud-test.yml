@@ -1,0 +1,24 @@
+name: Phase 5 cloud test authentication check
+on:
+  workflow_dispatch:
+    inputs:
+      local_uat_approved:
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  verify-identity:
+    if: inputs.local_uat_approved && vars.PHASE5_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: cloud-test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_BUILD_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db
+      - run: gcloud auth list --filter=status:ACTIVE --format='value(account)'

@@ -1,0 +1,24 @@
+<details class="mobile-nav" id="mobile-nav">
+  <summary aria-label="開啟導覽選單" aria-expanded="false">
+    選單 <span aria-hidden="true">☰</span>
+  </summary>
+  <nav aria-label="手機導覽">
+    <a href="/posts/">文章</a>
+    <a href="/categories/">分類</a>
+    <a href="/about/">關於</a>
+  </nav>
+</details>
+<script>
+  const menu = document.querySelector<HTMLDetailsElement>("#mobile-nav");
+  menu?.addEventListener("toggle", () =>
+    menu
+      .querySelector("summary")
+      ?.setAttribute("aria-expanded", String(menu.open)),
+  );
+  menu?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      menu.open = false;
+      menu.querySelector("summary")?.focus();
+    }
+  });
+</script>

@@ -1,0 +1,57 @@
+---
+import Base from "../layouts/Base.astro";
+import Hero from "../components/Hero.astro";
+import ArticleCard from "../components/ArticleCard.astro";
+import Pagination from "../components/Pagination.astro";
+import { PAGE_SIZE } from "@asoball/content-contract";
+import { posts, snapshot } from "../lib/content";
+const featured = posts.filter((post) => post.featured).slice(0, 1);
+---
+
+<Base>
+  <Hero />
+  {featured.length > 0 && (
+    <section class="featured">
+      <div class="section-heading">
+        <h2>精選文章</h2>
+      </div>
+      {featured.map((post) => (
+        <ArticleCard post={post} />
+      ))}
+    </section>
+  )}
+  <section>
+    <div class="section-heading">
+      <h2>最新文章</h2>
+      <a href="/posts/">所有文章 →</a>
+    </div>
+    {posts.length ? (
+      <div class="article-grid">
+        {posts.slice(0, PAGE_SIZE).map((post, i) => (
+          <ArticleCard post={post} eager={i < 2} />
+        ))}
+      </div>
+    ) : (
+      <div class="empty-state">
+        <p>目前沒有文章</p>
+        <a href="/posts/">瀏覽文章列表</a>
+      </div>
+    )}
+    <Pagination
+      page={1}
+      total={Math.ceil(posts.length / PAGE_SIZE)}
+      base="/posts/"
+    />
+  </section>
+  <section>
+    <div class="section-heading">
+      <h2>主題分類</h2>
+      <a href="/categories/">全部分類 →</a>
+    </div>
+    <nav class="taxonomy-links" aria-label="主題分類">
+      {snapshot.categories.map((category) => (
+        <a href={`/categories/${category.slug}/`}>{category.name}</a>
+      ))}
+    </nav>
+  </section>
+</Base>
