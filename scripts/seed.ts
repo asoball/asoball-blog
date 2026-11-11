@@ -5,7 +5,8 @@ import {
   draftFixtures,
 } from "@asoball/content-contract/fixture";
 import type { ContentNode } from "@asoball/content-contract";
-process.loadEnvFile("apps/cms/.env");
+import { loadCmsEnvironment } from "../apps/cms/src/environment-file";
+loadCmsEnvironment();
 const uri = new URL(process.env.DATABASE_URI!);
 if (
   !["127.0.0.1", "localhost"].includes(uri.hostname) ||

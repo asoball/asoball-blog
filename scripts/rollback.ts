@@ -4,8 +4,15 @@ import {
   rollback,
   recoverDeadActivationLock,
 } from "../packages/publishing/src/rollback";
-process.loadEnvFile("apps/cms/.env");
-const queue = await new PublisherQueue(process.env.DATABASE_URI!).open();
+import { loadCmsEnvironment } from "../apps/cms/src/environment-file";
+import { readEnvironment } from "../apps/cms/src/environment";
+loadCmsEnvironment();
+const env = readEnvironment(process.env);
+if (env.DEPLOYMENT_ENV === "cloud")
+  throw new Error(
+    "Local rollback cannot roll back Cloud Run or Firebase. Use the cloud revision/release history.",
+  );
+const queue = await new PublisherQueue(env.DATABASE_URI).open();
 try {
   const dataDir = path.resolve(process.env.LOCAL_DATA_DIR || ".local");
   if (process.argv[2] === "--recover-dead-lock") {

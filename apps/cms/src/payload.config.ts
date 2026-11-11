@@ -6,7 +6,7 @@ import {
 } from "@payloadcms/richtext-lexical";
 import { buildConfig, type SharpDependency } from "payload";
 import sharp from "sharp";
-import { existsSync } from "node:fs";
+import { loadCmsEnvironment } from "./environment-file";
 import { fileURLToPath } from "node:url";
 import { readEnvironment } from "./environment";
 import {
@@ -26,7 +26,7 @@ import path from "node:path";
 import { mediaStoragePlugin } from "./storage";
 const sourceDir = path.dirname(fileURLToPath(import.meta.url));
 const envPath = path.resolve(sourceDir, "../.env");
-if (existsSync(envPath)) process.loadEnvFile(envPath);
+loadCmsEnvironment(envPath);
 const env = readEnvironment(process.env);
 // Sharp 0.35 accepts byte buffers; adapt Payload's older ArrayBuffer/view contract.
 const payloadSharp: SharpDependency = (input, options) => {
@@ -41,14 +41,11 @@ const payloadSharp: SharpDependency = (input, options) => {
 export default buildConfig({
   secret: env.PAYLOAD_SECRET,
   sharp: payloadSharp,
-  serverURL: process.env.CMS_URL || "http://127.0.0.1:3000",
+  serverURL: env.CMS_URL,
   admin: { user: "users", importMap: { baseDir: sourceDir } },
   collections: [Users, Posts, Categories, Tags, Media, Deployments],
   onInit: initializePublisher,
-  plugins: mediaStoragePlugin(
-    process.env.MEDIA_STORAGE || "local",
-    process.env.GCS_BUCKET,
-  ),
+  plugins: mediaStoragePlugin(env.MEDIA_STORAGE, env.GCS_BUCKET),
   editor: lexicalEditor({
     features: ({ defaultFeatures }) => [
       ...defaultFeatures.filter((feature) => feature.key !== "heading"),

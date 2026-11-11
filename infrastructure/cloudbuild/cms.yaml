@@ -1,0 +1,63 @@
+# CMS image build. Configure the trigger's service account and approval in Console.
+# First run: _DEPLOY_CMS=false. After initial Console service setup, enable true.
+# Deployment creates a revision without changing serving traffic.
+substitutions:
+  _REGION: asia-east1
+  _REPOSITORY: asoball-blog-test-cms
+  _SERVICE: asoball-blog-test-cms
+  _DEPLOY_CMS: "false"
+steps:
+  - id: validate-trigger-input
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli@sha256:7b209f64f9f4bfd340cc28dec288e36a0f911f21b8c7d5732fcf7fcba64c967b
+    entrypoint: bash
+    env:
+      - SOURCE_SHA=$COMMIT_SHA
+      - DEPLOY_CMS=$_DEPLOY_CMS
+    args:
+      - -ceu
+      - |
+        [[ "$${SOURCE_SHA}" =~ ^[a-f0-9]{40}$ ]] || { echo 'A fixed Git commit is required.'; exit 1; }
+        [[ "$${DEPLOY_CMS}" == false || "$${DEPLOY_CMS}" == true ]] || { echo 'Invalid deployment mode.'; exit 1; }
+  - id: build-cms
+    name: gcr.io/cloud-builders/docker@sha256:fbc05705e6f24467e40ae8a4097ab9b8fae1116551f838fa2c55f4367427fc36
+    args:
+      - build
+      - --platform=linux/amd64
+      - -f
+      - apps/cms/Dockerfile
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/cms:$COMMIT_SHA
+      - .
+  - id: push-cms
+    name: gcr.io/cloud-builders/docker@sha256:fbc05705e6f24467e40ae8a4097ab9b8fae1116551f838fa2c55f4367427fc36
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/cms:$COMMIT_SHA
+  - id: stage-cms-revision
+    name: gcr.io/google.com/cloudsdktool/google-cloud-cli@sha256:7b209f64f9f4bfd340cc28dec288e36a0f911f21b8c7d5732fcf7fcba64c967b
+    entrypoint: bash
+    env:
+      - DEPLOY_CMS=$_DEPLOY_CMS
+      - DEPLOY_PROJECT=$PROJECT_ID
+      - DEPLOY_REGION=$_REGION
+      - DEPLOY_SERVICE=$_SERVICE
+      - IMAGE_PATH=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/cms
+      - IMAGE_TAG=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/cms:$COMMIT_SHA
+    args:
+      - -ceu
+      - |
+        digest="$$(gcloud artifacts docker images describe "$${IMAGE_TAG}" --project="$${DEPLOY_PROJECT}" --format='value(image_summary.fully_qualified_digest)')"
+        [[ "$${digest}" == "$${IMAGE_PATH}@sha256:"* ]] && [[ "$${digest##*@sha256:}" =~ ^[a-f0-9]{64}$ ]] || { echo 'Invalid image digest.'; exit 1; }
+        printf 'CMS image: %s\n' "$${digest}"
+        if [[ "$${DEPLOY_CMS}" == false ]]; then
+          echo 'Image built. Complete initial Cloud Run configuration in Console.'
+          exit 0
+        fi
+        gcloud run services describe "$${DEPLOY_SERVICE}" --project="$${DEPLOY_PROJECT}" --region="$${DEPLOY_REGION}" >/dev/null
+        gcloud run services update "$${DEPLOY_SERVICE}" --project="$${DEPLOY_PROJECT}" --region="$${DEPLOY_REGION}" --image="$${digest}" --no-traffic --quiet
+        echo 'Revision staged. Verify its commit and settings before routing traffic in Console.'
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/cms:$COMMIT_SHA
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s

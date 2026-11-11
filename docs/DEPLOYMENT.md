@@ -1,5 +1,7 @@
 # Deployment — GCP / Atlas / Firebase
 
+**實際手動操作請先閱讀 [GCP 手動部署操作手冊](GCP_MANUAL_DEPLOYMENT.md)**。使用者已確認沿用 Firebase Hosting；手冊以 Console 繁中介面為主，必要設定與 Optional 分開，gcloud／Terraform 另列 [CLI 選用附錄](GCP_GCLOUD_REFERENCE.md)。本文件保留目標架構與階段規格。目前 CMS image 只提供後台，既有 Cloud Build YAML 只建候選版本；不能將下列目標 pipeline 誤認為已完成真實雲端串接。GCS Private ACL 與 UBLA 的相容性修正、M0／GCS 複驗與前台發布均須按手冊完成。
+
 > 本文件為執行 Runbook 與驗證清單，非已驗證的一鍵部署腳本。所有 ID、區域、CLI 旗標與權限需在實作時依官方文件核對。建議先建立 dev，再部署 prod。
 
 ## 執行時機
@@ -10,14 +12,14 @@
 
 ## 1. 環境與命名
 - GCP project: `<PROJECT_ID>`；region: `asia-east1`；GitHub repo: `<ORG>/<REPO>`。
-- Cloud Run: `tech-blog-cms`；VPC: `tech-blog-vpc`；subnet: `tech-blog-egress`；Cloud Router: `tech-blog-router`；NAT: `tech-blog-nat`；static IPv4: `tech-blog-egress-ip`。
+- Cloud Run: `tech-blog-cms`；VPC 沿用專案既有 `default`；subnet 選該網路下與 Run 同 Region 的既有 subnet（名稱與 CIDR 依實際值）；Cloud Router: `tech-blog-router`；NAT: `tech-blog-nat`；static IPv4: `tech-blog-egress-ip`。Router／NAT／固定 IP 可在確認相容且無共用服務衝突後沿用既有設定。
 - GCS: `<PROJECT_ID>-blog-media`、`<PROJECT_ID>-blog-snapshots`。
 - Firebase Hosting site: `blog`；CMS domain: `admin.example.com`；Blog domain: `blog.example.com`。
 - Atlas M0 選與 Cloud Run 相近且支援的 provider/region；若不能同區域，記錄延遲與跨區傳輸成本。
 
 ## 2. Terraform 管理資源
 啟用 APIs：run、artifactregistry、cloudbuild、compute、secretmanager、storage、iam、logging、monitoring、firebasehosting（Firebase project/site 初始化可先 Console）。
-建立：VPC、subnet（足夠 Direct VPC egress IP 空間）、Cloud Router、保留 static external IPv4、Public Cloud NAT（manual IP allocation）、GCS、Artifact Registry、Cloud Run service、Service Accounts、Secret Manager、必要 IAM、Budget Alerts（依 Billing 權限）。
+手動部署沿用既有 default VPC 與同區 subnet，不另外建立網路；其餘依需求建立或沿用 Cloud Router、保留 static external IPv4、Public Cloud NAT（manual IP allocation），以及 GCS、Artifact Registry、Cloud Run service、Service Accounts、Secret Manager、必要 IAM、Budget Alerts（依 Billing 權限）。現有 Terraform 模板仍會建立獨立 VPC／subnet；若採 Terraform，必須先調整為引用既有網路，不能直接套用現有模板。
 - Terraform state 使用獨立受限 GCS bucket + versioning，避免把密碼放在 state。
 - Terraform `plan` 必須人工審核，`apply` 必須人工確認。
 
@@ -45,6 +47,8 @@
 5. 驗證 Payload 建表/索引、draft/version、媒體關聯、發文及資料庫容量。
 
 ## 6. CMS 容器
+
+CMS 建置流程改為手動設定 Cloud Build trigger，設定檔使用 `infrastructure/cloudbuild/cms.yaml`；首次 `_DEPLOY_CMS=false` 只建映像，完成 Run 初始化後才啟用候選 revision 更新。建構前需核准，候選版本使用 `--no-traffic`，最後由人員在 Console 驗證並切換指定 revision。`infrastructure/cloudbuild/blog.yaml` 是另一條 Astro candidate 建置，不可混用。詳見手冊第 3.6 節；目前尚未執行雲端驗證。
 - 使用官方 Payload Next.js template 初始化；MongoDB adapter `@payloadcms/db-mongodb`、GCS adapter `@payloadcms/storage-gcs`。
 - Next.js `output: 'standalone'`；multi-stage Dockerfile；Node LTS 版本與 Payload/Next.js 相容性先驗證。
 - 初始 Cloud Run：region asia-east1，1 vCPU、1Gi RAM、min=0、max=1、concurrency=10、request timeout 依實測設定；若記憶體不足調整。

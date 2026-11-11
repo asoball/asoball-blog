@@ -1,5 +1,15 @@
 import path from "node:path";
 import { backupKey, backupLocal, restoreLocal } from "./backup-lib";
+import { loadCmsEnvironment } from "../apps/cms/src/environment-file";
+loadCmsEnvironment();
+if (
+  process.env.DEPLOYMENT_ENV === "cloud" ||
+  process.env.K_SERVICE ||
+  process.env.DATABASE_URI?.startsWith("mongodb+srv:")
+)
+  throw new Error(
+    "This backup command supports local Docker only; it does not back up Atlas or GCS.",
+  );
 const [action, databaseOrFolder] = process.argv.slice(2),
   key = await backupKey();
 if (action === "create") {

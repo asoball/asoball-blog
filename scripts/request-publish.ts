@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { PublisherQueue } from "@asoball/publishing/queue";
-process.loadEnvFile("apps/cms/.env");
-const queue = await new PublisherQueue(process.env.DATABASE_URI!).open();
+import { loadCmsEnvironment } from "../apps/cms/src/environment-file";
+import { readEnvironment } from "../apps/cms/src/environment";
+loadCmsEnvironment();
+const env = readEnvironment(process.env);
+const queue = await new PublisherQueue(env.DATABASE_URI).open();
 try {
   const user = await queue.db.collection("users").findOne({ role: "admin" });
   if (!user) throw new Error("Administrator required.");
@@ -9,7 +12,7 @@ try {
     { id: String(user._id), role: "admin" },
     `manual:${randomUUID()}`,
   );
-  console.log(`Queued local release ${job!.seq}.`);
+  console.log(`Queued release ${job!.seq}.`);
 } finally {
   await queue.close();
 }

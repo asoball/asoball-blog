@@ -2,10 +2,13 @@
 
 ## 已決策
 - ADR-001：公開前台 Astro SSG + Firebase Hosting；避免 CMS 負擔公開流量。
+  - 2026-11-05 使用者再次確認沿用 Firebase Hosting；部署由人員手動執行，操作文件列出 Atlas M0、CMS Cloud Run、private GCS 與所有必要支援資源。未改為前台 Cloud Run 架構；自動內容發布仍依 P05-08 另行整合驗證。
 - ADR-002：Payload CMS / Next.js 部署 Cloud Run；不使用 FastAPI。
+  - 使用者指定 CMS image 由 Cloud Build trigger 建置。首次 image-only 後由 Console 設定 Run；後續 trigger 可建立不帶流量的候選 revision，人工驗證並選定版本切換流量。此流程與 Astro 內容發布分開，設定檔為 `infrastructure/cloudbuild/cms.yaml`。
 - ADR-003：MongoDB Atlas M0 作為雲端 CMS DB；本機先以 Docker MongoDB 完成 PoC 與開發，雲端 M0 實測於本機 UAT 完成後執行（時程依 ADR-008 修訂）。
 - ADR-004：GCS 儲存媒體；MongoDB 儲存文章 Lexical JSON/Metadata。
 - ADR-005：Cloud Run Direct VPC egress + Cloud NAT 固定出口 IP，Atlas `/32` allowlist。
+  - 使用者確認手動部署沿用專案既有 `default` VPC 與同 Region 的既有 subnet，不另建 VPC；NAT 只涵蓋選定 subnet，沿用共用 Router／NAT 前先核對出口與其他服務影響。既有 Terraform 網路資源尚待改為引用模式，本次只調整手冊。
 - ADR-006：Cloud Build 發布 Astro，內容快照不可變，部署序列化。
 
 - ADR-007：前台選擇風格 D（Developer Blog 首頁 + Editorial Reading 文章頁 + Documentation TOC），採用設計 tokens 與 RWD/可及性驗收；見 UI_UX_SPEC.md、DESIGN_SYSTEM.md、PAGE_WIREFRAMES.md、FRONTEND_ACCEPTANCE.md。

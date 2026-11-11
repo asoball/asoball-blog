@@ -1,8 +1,11 @@
 import { MongoClient } from "mongodb";
 import path from "node:path";
 import { exportSnapshot } from "@asoball/publishing/snapshot";
-process.loadEnvFile("apps/cms/.env");
-const client = new MongoClient(process.env.DATABASE_URI!, { maxPoolSize: 3 });
+import { loadCmsEnvironment } from "../apps/cms/src/environment-file";
+import { readEnvironment } from "../apps/cms/src/environment";
+loadCmsEnvironment();
+const env = readEnvironment(process.env);
+const client = new MongoClient(env.DATABASE_URI, { maxPoolSize: 3 });
 await client.connect();
 try {
   const admin = await client
@@ -15,12 +18,12 @@ try {
     process.argv[2] || `manual-${Date.now()}`,
   );
   const snapshot = await exportSnapshot({
-    uri: process.env.DATABASE_URI!,
+    uri: env.DATABASE_URI,
     actor: { id: String(admin._id), role: "admin" },
     directory,
-    dataDir: path.resolve(".local"),
-    mediaDriver: process.env.MEDIA_STORAGE === "gcs" ? "gcs" : "local",
-    bucket: process.env.GCS_BUCKET,
+    dataDir: path.resolve(process.env.LOCAL_DATA_DIR || ".local"),
+    mediaDriver: env.MEDIA_STORAGE,
+    bucket: env.GCS_BUCKET,
   });
   console.log(
     `Exported ${snapshot.posts.length} published posts to ${directory}`,

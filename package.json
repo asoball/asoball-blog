@@ -21,6 +21,7 @@
     "db:up": "docker compose up -d --wait --wait-timeout 120",
     "db:status": "docker compose ps",
     "setup:local": "tsx scripts/setup-local.ts",
+    "config:check": "tsx scripts/check-config.ts",
     "bootstrap": "tsx scripts/bootstrap.ts",
     "dev:cms": "pnpm --filter cms dev",
     "test:integration": "tsx scripts/integration.ts",
@@ -59,6 +60,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.72.1",
     "vitest": "5.1.0",
+    "yaml": "2.9.1",
     "zod": "4.6.7"
   }
 }

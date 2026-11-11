@@ -38,6 +38,7 @@
 2. [系統架構與資料流](docs/ARCHITECTURE.md)
 3. [內容模型與 API](docs/DATA_AND_API.md)
 4. [GCP 部署與網路](docs/DEPLOYMENT.md)
+   - [GCP 手動部署操作手冊](docs/GCP_MANUAL_DEPLOYMENT.md)：Console 優先，必要設定與 Optional 分開；沿用 Firebase Hosting，包含繁中介面操作、程式限制與人工發布。gcloud／Terraform 替代方式另見 [CLI 選用附錄](docs/GCP_GCLOUD_REFERENCE.md)。
 5. [安全與營運](docs/SECURITY_OPERATIONS.md)
 6. [測試與驗收](docs/TEST_PLAN.md)
 7. [工作拆解](docs/TASKS.md)
@@ -87,6 +88,7 @@ pnpm publishing:once
 
 - MongoDB 僅開放 `127.0.0.1:27017`，主機版使用 `asoball_blog_dev`，具名 volume 保留資料。
 - `setup:local` 產生被忽略的 `apps/cms/.env` 與 `.local/backup.key`；設定範例見 [環境變數範例](apps/cms/.env.example)。
+  - 雲端設定另見 [雲端環境範例](apps/cms/.env.cloud.example)，可設定 `CMS_ENV_FILE=.local/cloud.env`。`pnpm config:check` 只驗證設定，不連線、不輸出秘密。Cloud Run 選 cloud／GCS，支援自訂 Atlas DB；本機預設仍是 local／Docker MongoDB。
 - `bootstrap` 建立首位管理者；已有帳號時不修改帳號或密碼。
 - `seed:local` 建立明確標示的驗收 fixture（含 12 篇 published、2 篇 draft），不覆寫既有同 slug 文章。
 

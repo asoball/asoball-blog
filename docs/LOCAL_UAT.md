@@ -22,6 +22,10 @@
 
 ## 指令紀錄
 
+### 後續：本機／雲端環境相容準備
+
+已修正 UBLA 物件 ACL 衝突，加入 local／cloud 設定驗證、自訂 Atlas DB、獨立 env 檔、雲端 bootstrap Email、設定檢查 CLI 與本機維運命令的 cloud 防呆。`pnpm lint`、`pnpm typecheck`、`pnpm test`（31 tests）、`pnpm test:integration`、`pnpm test:queue`、`pnpm test:publishing`、`pnpm test:backup`、`pnpm build` 通過；local 與假資料 cloud 的離線 config check 通過。測試使用 Docker MongoDB／替身／離線假設定，沒有連接真實 Atlas／GCS。使用者回報 Console 建置完成至手冊 3.5，不因此將 Phase 5 真實服務驗收勾選完成。
+
 後續修正（2026-11-05）：publisher 啟動時遇到已持有的租約，改為正常回報 busy；持續 worker 重試初始化，單次執行不搶鎖。新增真實 MongoDB 雙 publisher 與 CLI busy 回歸，以及 active.json 缺失後恢復測試。`pnpm build` 已重新通過，其本身不呼叫 publisher。
 
 | 命令 | 結果 |

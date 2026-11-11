@@ -49,10 +49,12 @@
 前置：P04-06 本機 UAT 通過。先核對官方服務限制、版本、區域、成本與身分，再提供 plan；建立資源、IAM 變更與部署仍依授權規範執行。本規劃調整不等於授權建立雲端資源。
 
 - [ ] **P05-01** 複核已完成的 Terraform／部署設定，填入測試環境參數並產生正式雲端 plan 與費用明細。驗收：plan 可審核，不執行 apply；需要雲端身分的 plan 僅於本階段執行。
+  - 已撰寫 [手動部署操作手冊](GCP_MANUAL_DEPLOYMENT.md) 與程式限制清單；尚未取得真實環境參數、執行雲端 plan 或驗收，不因此勾選完成。
 - [ ] **P05-02** 經授權建立測試用 VPC/subnet/Router/NAT/static IPv4、GCS、Artifact Registry、Cloud Run/SA/Secrets 與 Atlas M0。驗收：資源、權限、預算告警及清理計畫符合已審核 plan。
 - [ ] **P05-03** Cloud Run Direct VPC egress + Cloud NAT static IPv4 + Atlas allowlist（原 P00-02）。驗收：出口 IPv4 一致、Atlas 僅允許 /32、TLS 成功、非允許來源被拒。
 - [ ] **P05-04** Atlas M0 相容性複驗（原 P00-01 雲端部分）。驗收：用正式 schema 重跑登入、CRUD、draft/version/restore、索引、關聯、交易、ACL 與升級回歸，記錄實際版本及限制；不通過則修正並重驗本機與雲端，不直接上線。
 - [ ] **P05-05** 切換官方 GCS media adapter（原 P00-03 與 P02-04 雲端部分）。驗收：上傳/讀取/刪除、匿名隔離、私人草稿圖片、Cloud Run 重啟持久化與 published 媒體公開路徑。
+  - 本機相容準備：已移除與 UBLA 衝突的物件 ACL，加入 local／cloud 環境驗證、自訂 Atlas DB、獨立 env 檔、雲端 bootstrap Email 與不連線 config check。使用者回報 Console 設定完成至手冊 3.5；真實 Atlas／GCS 功能及重啟驗證尚未執行，不勾選雲端驗收。
 - [ ] **P05-06** CMS image 部署測試 Cloud Run。驗收：登入、媒體、cold start、健康檢查、max-instances=1、連線池與 Secrets。
 - [ ] **P05-07** Firebase Hosting 測試站。驗收：靜態首頁/文章/404/HTTPS/SEO；先用測試預設網域，自訂域名依實際設定驗證。
 - [ ] **P05-08** Cloud Build + Firebase 發布、雲端 snapshot 存取、專用 IAM/WIF、Payload hook。沿用本機發布契約與原子狀態設計。驗收：發布/取消發布/刪除 E2E、去重、序列化、重試、較舊 build 拒絕部署與失敗保留舊站。
