@@ -1,6 +1,6 @@
 # Asoball Blog — 專案與操作說明
 
-版本：1.2（2026-11-05）｜狀態：本機 Phase 0～4 驗收完成｜讀者：Codex / 開發者
+版本：1.3（2026-11-12）｜狀態：本機 Phase 0～4 驗收完成；雲端 CMS 已由操作者確認可登入，完整雲端驗收待完成｜讀者：Codex / 開發者
 
 ## 專案介紹
 
@@ -49,6 +49,7 @@
 12. [前端驗收標準](docs/FRONTEND_ACCEPTANCE.md)
 13. [Codex 執行規範](AGENTS.md)
 14. [P00-01 相容性 PoC 紀錄](docs/COMPATIBILITY_POC.md)
+15. [線上 CMS 與 Firebase Hosting 操作手冊](docs/ONLINE_RUNBOOK.md)：新增／編輯文章、草稿與媒體管理、前台新版建置、預覽、部署及回復。
 
 ## 目前開發進度
 
@@ -161,6 +162,16 @@ docker compose stop mongodb
 ```
 
 備份、還原與回滾見 [本機操作手冊](docs/LOCAL_RUNBOOK.md)。
+
+## 雲端 CMS 操作資訊
+
+- 登入入口：[CMS 管理者登入](https://asoball-blog.cloud.run/admin/login)（依目前操作者使用的網址記錄）。若服務入口變更，以 Cloud Run Console 顯示的服務網址及實際 `CMS_URL` 為準，登入路徑固定為 `/admin/login`。
+- 首位雲端管理者已透過受信任 bootstrap CLI 建立，操作者已確認可登入。網頁首次註冊 `/api/users/first-register` 刻意停用，回傳 403 時不應解除此保護。
+- 初次帳號資訊存於執行 bootstrap 的操作電腦：`.local/cloud-admin.json`，不是 Cloud Run 容器內的檔案。使用本機編輯器開啟，`email` 是初始化時的 `BOOTSTRAP_EMAIL`，`password` 是 CLI 產生的隨機密碼；沒有固定共用密碼。
+- 該 JSON 是初次憑證紀錄，不是持續同步的帳號設定。後續在 CMS 的 Users 修改 Email／密碼後，以實際帳號為準，JSON 不會自動更新。已有管理者時重跑 bootstrap 不會重設密碼，亦不覆寫憑證檔；檔案遺失時不要假設重跑即可取回密碼。
+- `.local/cloud.env` 保存雲端連線設定；`.local/cloud-admin.json` 保存初次登入憑證，兩者用途不同，均不得提交 Git、貼入聊天或公開文件，也不可放入 Firebase Hosting 發布目錄。請將帳密安全保存於密碼管理工具。
+
+登入後可管理文章、分類、標籤與媒體。現階段雲端文章的公開前台更新仍需依 [GCP 手動部署手冊第 3.9 節](docs/GCP_MANUAL_DEPLOYMENT.md#39-必要操作初始化帳號建置與發布前台) 匯出 published 快照、建置並發布 Firebase Hosting；CMS 儲存／發布成功不代表 `https://asoball.web.app` 已更新。
 
 ## 測試帳號資訊
 

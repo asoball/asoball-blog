@@ -1,6 +1,6 @@
 # GCP 手動部署操作手冊（Console 優先）
 
-更新：2026-11-05。本手冊以 **GCP Console、Firebase Console、Atlas 網頁介面**為主要操作方式，繁體中文名稱後酌附英文以便辨識。Google 介面可能分批更新，少數項目仍顯示英文，可用 Console 上方搜尋列尋找產品。
+更新：2026-11-11。本手冊以 **GCP Console、Firebase Console、Atlas 網頁介面**為主要操作方式，繁體中文名稱後酌附英文以便辨識。Google 介面可能分批更新，少數項目仍顯示英文，可用 Console 上方搜尋列尋找產品。
 
 **必要設定依第 1～4 節順序完成；選用項目集中第 5 節；gcloud／Terraform 替代方式放在第 6 節附錄連結。** 設定是必要的，不代表必須使用 gcloud。本文沒有實際建立、修改或部署任何雲端資源，不能當作雲端驗收已完成的證據。
 
@@ -39,10 +39,9 @@ Cloud Run → Direct VPC egress → Cloud NAT 固定 IPv4 → Atlas allowlist
 | --------------------------------------- | ------------------------------------------ | --------- |
 | Bucket「物件版本管理」                  | 可；不是上傳／閱讀的必要條件               | 第 5.1 節 |
 | 額外調整「虛刪除」、生命週期規則        | 可先保留預設，記錄實際保留時間與費用       | 第 5.2 節 |
-| 自訂網域／DNS                           | 可，先用 run.app／web.app                  | 第 5.3 節 |
-| Astro 內容自動發布、GitHub Actions、WIF | 可；CMS Cloud Build trigger 已移至必要項目 | 第 5.4 節 |
-| snapshots／candidates 額外 Bucket       | 人工路線可略過，產物先留操作機             | 第 5.4 節 |
-| Firebase Analytics、AI 輔助             | 可；本專案功能不依賴                       | 第 5.5 節 |
+| Astro 內容自動發布、GitHub Actions、WIF | 可；CMS Cloud Build trigger 已移至必要項目 | 第 5.3 節 |
+| snapshots／candidates 額外 Bucket       | 人工路線可略過，產物先留操作機             | 第 5.3 節 |
+| Firebase Analytics、AI 輔助             | 可；本專案功能不依賴                       | 第 5.4 節 |
 | gcloud／Terraform 設定資源              | 可，Console 已完成就不用再跑               | 第 6 節   |
 
 不需要為本專案啟用 Firebase App Hosting、Authentication、Firestore、Realtime Database、Cloud Storage for Firebase，也不需註冊 Firebase Web App 或複製 firebaseConfig。原始媒體使用本手冊建立的 GCS Bucket。
@@ -194,24 +193,55 @@ Console：「Artifact Registry」→「存放區」→「建立存放區」：�
 
 #### C. 首次與後續部署
 
-- **首次**：`_DEPLOY_CMS=false`。Registry → CMS image → 此 commit 版本，複製 `.../cms@sha256:...`，接續第 3.8 節建立 Cloud Run。建好 image 不代表 Run 服務已建立。
-- **後續**：授予建置 SA Run／actAs 權限，改 `_DEPLOY_CMS=true`。核准 build 後，以 digest 更新**既有** CMS service，使用 `--no-traffic` 建立候選 revision，保留現行流量與既有 VPC／Secrets 設定；不新建服務、不修改公開存取 IAM。
-- Cloud Run →「修訂版本」核對候選版本的 digest／commit、Secrets、CMS_URL、default VPC／同區 subnet、all-traffic 與容量。可使用受保護的修訂版本測試入口驗證，再由「管理流量」明確指定通過驗收的 revision 切換；不要只根據「最新版本」切流量。
-- 失敗不切換線上流量。多次 build 重疊時，人工核對特定 commit／revision，避免較舊程式被切成線上版本；保留前一成功 revision 供回滾。
+- 首次維持 `_DEPLOY_CMS=false`，只建置及推送映像。從 Artifact Registry 複製完整 `cms@sha256:...`，供第 3.8 節建立 Cloud Run。
+- Run 建立及建置 SA 權限完成後，才改為 `_DEPLOY_CMS=true`。流程以 `--no-traffic` 更新既有服務，建立候選修訂版本；不新建服務或修改公開存取 IAM。
+- 在 Cloud Run「修訂版本」核對候選版本的 digest／commit、Secrets、CMS_URL、default VPC／subnet、all-traffic 與容量，驗證後才透過「管理流量」指定該版本。保留前一成功版本供回復；失敗不切換流量。
 
-此流程會產生 Cloud Build 建構、日誌及 Registry 儲存費用。建置不需要 Atlas allowlist 或正式 DB secrets；部署前仍須完成第 2.1 節必要修正。本次只新增設定檔及文件，未建立 trigger、執行雲端 build 或部署。
+Cloud Build 建構、日誌與 Registry 儲存可能計費。建置不需 Atlas allowlist 或正式 DB secrets；需使用第 2.1 節修正後的程式。本手冊不執行雲端建置或部署。
 
-參照 [Cloud Build trigger（繁中）](https://docs.cloud.google.com/build/docs/automating-builds/create-manage-triggers?hl=zh-tw)、[建構核准](https://docs.cloud.google.com/build/docs/securing-builds/gate-builds-on-approval?hl=zh-tw)、[自訂建置 SA](https://docs.cloud.google.com/build/docs/securing-builds/configure-user-specified-service-accounts?hl=zh-tw)。
+參照 [Cloud Build trigger](https://docs.cloud.google.com/build/docs/automating-builds/create-manage-triggers?hl=zh-tw)、[建構核准](https://docs.cloud.google.com/build/docs/securing-builds/gate-builds-on-approval?hl=zh-tw)。
 
-### 3.7 Firebase Console
+### 3.7 Firebase Hosting：Console 與 CLI 登入
 
-1. 登入 [Firebase Console](https://console.firebase.google.com/)，建立專案入口選「將 Firebase 新增至 Google Cloud 專案」（Add Firebase to Google Cloud project），選**同一個既有 GCP project**，接受條款。
-2. 「專案設定」核對「專案 ID」一致；已有 Billing 的專案會使用 Blaze 計費方案，不是另外建立一個 GCP 專案。
-3. 開啟 **Hosting**，依「開始使用」提示準備預設 site；記錄 Site ID 與 `https://SITE_ID.web.app`。不要選 App Hosting，也不必建立第二個 site。
-4. CLI 初始化提示只作參考：repo 已有 `firebase.json`，不要重跑 init 覆寫。public 路徑、cache headers 已在該檔，不用 Console 重設。
-5. AI 輔助、Google Analytics、自訂網域都是 Optional；不需啟用其他 Firebase 資料庫／登入／Storage 產品。
+本節準備 Hosting 與操作機；正式發布須待第 3.8 節 CMS 與第 3.9 節快照建置完成。
 
-參照 [既有 GCP project 加入 Firebase](https://firebase.google.com/docs/projects/use-firebase-with-existing-cloud-project)、[Hosting 開始使用](https://firebase.google.com/docs/hosting/quickstart)。
+#### A. Firebase Console 設定
+
+1. 登入 [Firebase Console](https://console.firebase.google.com/)，選擇既有 `asoball` 專案；尚未加入 Firebase 時，選「將 Firebase 新增至 Google Cloud 專案」，選同一既有 GCP 專案，不另外建立專案。
+2. 「專案設定」確認 Project ID 是 `asoball`，並核對帳單方案與預算。已連結 Billing 的專案使用 Blaze，Hosting 儲存及流量仍須納入成本。
+3. 「建構」→「Hosting」→「開始使用」，核對預設 Site ID 為 `asoball`、網址為 `https://asoball.web.app`。選 Hosting，不選 App Hosting，也不建立第二個 site。
+4. Console 教學中的 `firebase init`／`firebase init hosting` **直接略過**。repo 已有 `firebase.json`，包含 public 目錄、快取及安全標頭；重新初始化可能覆寫設定。Astro 使用各頁靜態 HTML 與真正的 404，不設定 SPA 全路徑導向 index.html。
+5. 不需註冊 Web App、複製 firebaseConfig 或啟用 Analytics、Authentication、Firestore、Firebase Storage。
+
+#### B. 安裝 CLI、登入與確認目標
+
+在符合專案 Node.js／pnpm 版本的 PowerShell 中執行。已安裝相同 CLI 版本可略過安裝，已登入且授權有效可沿用登入：
+
+```powershell
+Set-Location D:\Code\asoball-blog
+npm install --global firebase-tools@15.35.0
+firebase --version
+firebase login
+firebase projects:list
+$deployProject = 'asoball'
+firebase hosting:sites:list --project $deployProject
+```
+
+`firebase login` 開啟瀏覽器，登入有此專案 Hosting 部署權限的 Google 帳號。由管理員授予操作人員 Firebase Hosting 管理員（`roles/firebasehosting.admin`）及必要 API 使用權限，不對 CMS runtime SA 授予廣泛權限。
+
+核對清單中的 Project ID、預設 Site ID 與 Console 一致。本次兩者均為 `asoball`，但它們是不同欄位。指令明確使用 `--project`，不需 `firebase use --add` 或 `.firebaserc`；若實際有多站，先配置明確 site／target，不直接部署至不確定的預設站。
+
+Firebase CLI 登入不會建立 GCS ADC，也不提供 Atlas DB 授權；第 3.9 節匯出仍需另外準備。若找不到專案或權限不足，先確認帳號、Project ID 與 IAM，不重新 init。
+
+#### C. 預設 Hosting 網址與發布順序
+
+本次 Project ID 與預設 Site ID 均使用 `asoball`，公開網址為 **`https://asoball.web.app`**。請以 Console 與 `firebase hosting:sites:list --project asoball` 核對實際目標；若不同，先停止確認。本次不需設定 DNS。
+
+接續第 3.8 節建立 CMS，設定 `CMS_URL` 為實際 Run URL、`SITE_URL=https://asoball.web.app`，再依第 3.9 節完成：管理者初始化 → published 快照匯出 → Astro 建置 → 本機預覽 → Hosting 發布。
+
+repo 已有 `firebase.json`，發布目錄是 `.local/cloud-candidate/site`，由第 3.9 B 節產生。**不要在建置前直接 deploy，也不要以建立空目錄解決 Directory does not exist。** 不需重跑 init 或更改 public 路徑。
+
+參照 [Hosting 開始使用](https://firebase.google.com/docs/hosting/quickstart)、[Firebase CLI](https://firebase.google.com/docs/cli)。
 
 ### 3.8 Cloud Run Console
 
@@ -259,7 +289,7 @@ PAYLOAD_SECRET=<正式 Payload secret>
 MEDIA_STORAGE=gcs
 GCS_BUCKET=<實際媒體 Bucket>
 CMS_URL=https://<實際 CMS Run URL>
-SITE_URL=https://<實際 Hosting Site ID>.web.app
+SITE_URL=https://asoball.web.app
 BOOTSTRAP_CREDENTIAL_FILE=.local/cloud-admin.json
 BOOTSTRAP_EMAIL=<正式管理者 Email>
 ```
@@ -282,31 +312,49 @@ pnpm exec node --env-file=.local/cloud.env --import tsx scripts/bootstrap.ts
 ```powershell
 $manualRelease = 'manual-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
 pnpm exec node --env-file=.local/cloud.env --import tsx scripts/export-snapshot.ts $manualRelease
+if ($LASTEXITCODE -ne 0) { throw 'Snapshot export failed; stop deployment.' }
 $snapshotDirectory = Join-Path (Get-Location) ".local/snapshots/$manualRelease"
 $env:CONTENT_SNAPSHOT = Join-Path $snapshotDirectory 'snapshot.json'
 $env:BLOG_OUT_DIR = Join-Path (Get-Location) '.local/cloud-candidate/site'
-$env:SITE_URL = 'https://REPLACE_HOSTING_SITE.web.app'
+$env:SITE_URL = 'https://asoball.web.app'
 if (Test-Path -LiteralPath $env:BLOG_OUT_DIR) { throw 'Use a clean deployment workspace; candidate already exists.' }
 pnpm --filter blog build
-Copy-Item -LiteralPath (Join-Path $snapshotDirectory 'media') -Destination $env:BLOG_OUT_DIR -Recurse
+if ($LASTEXITCODE -ne 0) { throw 'Astro build failed; stop deployment.' }
+Copy-Item -LiteralPath (Join-Path $snapshotDirectory 'media') -Destination $env:BLOG_OUT_DIR -Recurse -ErrorAction Stop
 pnpm exec tsx scripts/seo-check.ts $env:BLOG_OUT_DIR
+if ($LASTEXITCODE -ne 0) { throw 'SEO validation failed; stop deployment.' }
 ```
 
 每次使用乾淨部署工作目錄，先封存上一版產物，不合併舊 candidate，避免取消發布後留下舊文章檔案。不要直接部署未設定 CONTENT_SNAPSHOT／SITE_URL 的 fixture build。
 
 #### C. Firebase 預覽與人工發布
 
+先完成第 3.7 節 CLI 安裝、登入及目標核對；若改開新終端，重新切到 repo 根目錄並設定 `$deployProject`。以下預覽／發布都使用第 B 節產出的 `.local/cloud-candidate/site`，不會代為執行 Astro build。第 A、B 節的 SITE_URL 均使用 `https://asoball.web.app`。
+
+**先驗證與本機預覽（不發布）：**
+
 ```powershell
-npm install --global firebase-tools@15.35.0
-firebase login
-$deployProject = 'REPLACE_PROJECT_ID'
-# 本機預覽，不更新線上版本；驗收後 Ctrl+C 結束
+$deployProject = 'asoball'
+firebase hosting:sites:list --project $deployProject
+if (-not (Test-Path -LiteralPath '.local/cloud-candidate/site/index.html')) { throw 'Build the published snapshot first.' }
+pnpm exec tsx scripts/seo-check.ts '.local/cloud-candidate/site'
+if ($LASTEXITCODE -ne 0) { throw 'SEO validation failed; stop deployment.' }
 firebase emulators:start --only hosting --project $deployProject
-# 確認 project／site／內容與回滾版本後，才執行正式發布
-firebase deploy --only hosting --project $deployProject
 ```
 
-先用本機預覽作為人工審查，不把它稱為遠端部署的通用 dry-run。現有 `firebase.json` public 指向 `.local/cloud-candidate/site`；多 site 時須先設定明確 target，不直接部署到不確定的預設 site。
+開啟命令輸出的 Hosting 本機網址（通常 `http://127.0.0.1:5000`），檢查首頁、文章、圖片、分類／標籤、RSS、sitemap、404；確認沒有草稿、測試 fixture 或 localhost canonical。驗收後按 Ctrl+C 結束。這是人工審查與本機預覽，不是遠端部署的通用 dry-run；未通過時先停止，不執行下一個指令。
+
+**確認 Project ID、預設 Site ID、Git commit、snapshot、發布目錄及可回復的前版後，人工執行正式發布：**
+
+```powershell
+firebase deploy --only hosting --project $deployProject --message "Manual release $manualRelease"
+```
+
+此指令會更新 `https://asoball.web.app` 的線上內容，不部署 CMS 或其他 Firebase 服務。先確認第 B 節與本次發布在同一操作工作階段，`$manualRelease` 是本次快照 ID。不要把 `.local` 整個目錄、雲端環境檔、管理者憑證或原始媒體當成 public 目錄。首次發布沒有前版可回滾，須特別確認內容。
+
+完成後至 Firebase Console → Hosting 核對發布歷程、時間與訊息；開啟 `https://asoball.web.app`，檢查頁面、圖片、HTTPS、canonical、RSS／sitemap 與 404。canonical 與 feeds 應使用 `https://asoball.web.app`。CLI 成功不代表完整上線驗收通過。
+
+需回復前端時，到 Firebase Console → Hosting → 發布歷程，選先前已驗證版本執行回復（Rollback）；此操作會改變線上版本，先核對目標。Hosting 回復不會回復 Atlas／GCS 原始資料、CMS revision 或 DNS。參照 [Hosting 本機測試與發布](https://firebase.google.com/docs/hosting/test-preview-deploy)。
 
 發布／更新／取消發布／刪除後都要重新匯出、乾淨建置、驗證與 deploy；草稿儲存不部署。此人工流程不會把 Mongo outbox 自動改為 succeeded，不與自動 worker 混用，不冒充 P05-08 完整雲端自動發布已通過。最後移除 Atlas 操作機 `/32`，關閉雲端操作終端。
 
@@ -343,15 +391,11 @@ Console：**Cloud Storage →「值區」→ 媒體 Bucket →「保護」→「
 
 生命週期可用於清理非現行版本，但包含刪除行為，先人工審查條件再設定。不要為此次部署設定／鎖定保留政策。見 [版本與虛刪除差異](https://cloud.google.com/storage/docs/object-versioning?hl=zh-tw)。
 
-### 5.3 自訂網域
-
-前台先用 Hosting 預設 web.app；要用自己的網域，再到 Firebase Hosting「新增自訂網域」，依提示設定 DNS 並等待憑證。CMS 先用 Run 預設 URL，自訂入口另依可用區域／網域方案規劃，變更後更新 CMS_URL。初次不需額外 Load Balancer／CDN。
-
-### 5.4 自動化與額外儲存
+### 5.3 自動化與額外儲存
 
 CMS Cloud Build trigger 已是第 3.6 節必要建置方式。本節 Optional 是 Astro「內容」自動發布，以及 GitHub Actions、WIF、snapshots／candidates 額外 Bucket。`cms.yaml` 不會發布文章或部署 Firebase；`blog.yaml` 目前也只建前台 candidate。要自動內容發布時依 P05-08 完成 orchestration、去重／序列化／fencing、版本上傳、啟用與不確定結果對帳。
 
-### 5.5 Firebase 額外功能
+### 5.4 Firebase 額外功能
 
 Google Analytics、AI 輔助與額外 Hosting sites 可先略過。CMS 登入由 Payload 管理，不啟用 Firebase Authentication；文章在 Atlas，不啟用 Firestore／Realtime Database。
 
