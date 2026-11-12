@@ -50,6 +50,7 @@
 13. [Codex 執行規範](AGENTS.md)
 14. [P00-01 相容性 PoC 紀錄](docs/COMPATIBILITY_POC.md)
 15. [線上 CMS 與 Firebase Hosting 操作手冊](docs/ONLINE_RUNBOOK.md)：新增／編輯文章、草稿與媒體管理、前台新版建置、預覽、部署及回復。
+16. [CMS 自動發布設定與維運（P05-08）](docs/CLOUD_AUTO_PUBLISHING.md)：Cloud Run Job、Scheduler、內容 Cloud Build、IAM、私有產物與 Firebase 自動部署；啟用前須完成文件中的 Console 設定及雲端驗收。
 
 ## 目前開發進度
 
@@ -171,7 +172,7 @@ docker compose stop mongodb
 - 該 JSON 是初次憑證紀錄，不是持續同步的帳號設定。後續在 CMS 的 Users 修改 Email／密碼後，以實際帳號為準，JSON 不會自動更新。已有管理者時重跑 bootstrap 不會重設密碼，亦不覆寫憑證檔；檔案遺失時不要假設重跑即可取回密碼。
 - `.local/cloud.env` 保存雲端連線設定；`.local/cloud-admin.json` 保存初次登入憑證，兩者用途不同，均不得提交 Git、貼入聊天或公開文件，也不可放入 Firebase Hosting 發布目錄。請將帳密安全保存於密碼管理工具。
 
-登入後可管理文章、分類、標籤與媒體。現階段雲端文章的公開前台更新仍需依 [GCP 手動部署手冊第 3.9 節](docs/GCP_MANUAL_DEPLOYMENT.md#39-必要操作初始化帳號建置與發布前台) 匯出 published 快照、建置並發布 Firebase Hosting；CMS 儲存／發布成功不代表 `https://asoball.web.app` 已更新。
+登入後可管理文章、分類、標籤與媒體。完成 [P05-08 自動發布設定](docs/CLOUD_AUTO_PUBLISHING.md) 並啟用 Scheduler 後，CMS Publish 會由雲端 Job 自動匯出、建置及部署，等待 Deployments succeeded 再驗收 `https://asoball.web.app`。尚未啟用時仍依 [GCP 手動部署手冊第 3.9 節](docs/GCP_MANUAL_DEPLOYMENT.md#39-必要操作初始化帳號建置與發布前台) 人工發布；人工與自動發布不得同時執行。
 
 ## 測試帳號資訊
 

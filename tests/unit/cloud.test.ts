@@ -3,6 +3,7 @@ import {
   submitBuildCandidate,
   promoteFirebaseVersion,
   type CloudPlan,
+  waitForCloudBuild,
 } from "../../packages/publishing/src/cloud";
 const plan: CloudPlan = {
   projectId: "test-project",
@@ -49,6 +50,57 @@ it("cloud candidate requires immutable inputs and an active lease", async () => 
     ownsLease: async () => true,
   });
   expect(requests).toHaveLength(1);
+});
+it("polls the regional Build resource, verifies inputs and rejects failed/stale builds", async () => {
+  const operation = {
+    name: "operations/build/test-project/encoded",
+    metadata: { build: { id: "build-id" } },
+  };
+  let status = "WORKING",
+    calls = 0;
+  const substitutions = {
+    _SOURCE_SHA: plan.commitSha,
+    _RELEASE_ID: plan.releaseId,
+    _SNAPSHOT_SHA256: plan.snapshotDigest,
+  };
+  const transport = {
+    request: async ({ url }: { url: string }) => {
+      expect(url).toBe(
+        "https://cloudbuild.googleapis.com/v1/projects/test-project/locations/asia-east1/builds/build-id",
+      );
+      calls++;
+      return { data: { id: "build-id", status, substitutions } };
+    },
+  };
+  expect(
+    (
+      await waitForCloudBuild(plan, operation, transport, {
+        ownsLease: async () => true,
+        sleep: async () => {
+          status = "SUCCESS";
+        },
+      })
+    ).id,
+  ).toBe("build-id");
+  expect(calls).toBe(2);
+  status = "FAILURE";
+  await expect(
+    waitForCloudBuild(plan, operation, transport, {
+      ownsLease: async () => true,
+    }),
+  ).rejects.toThrow("did not succeed");
+  status = "SUCCESS";
+  substitutions._SOURCE_SHA = "c".repeat(40);
+  await expect(
+    waitForCloudBuild(plan, operation, transport, {
+      ownsLease: async () => true,
+    }),
+  ).rejects.toThrow("input mismatch");
+  await expect(
+    waitForCloudBuild(plan, operation, transport, {
+      ownsLease: async () => false,
+    }),
+  ).rejects.toThrow("lease lost");
 });
 it("unknown remote activation outcomes leave the durable permit pending", async () => {
   let completed = false;

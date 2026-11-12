@@ -21,7 +21,15 @@ export type PublishState = {
   fence: number;
   mutation?: number;
   active?: ActiveRelease;
-  cloudPending?: { owner: string; fence: number; seq: number };
+  cloudPending?: {
+    owner: string;
+    fence: number;
+    seq: number;
+    site?: string;
+    version?: string;
+    message?: string;
+    active?: ActiveRelease;
+  };
   lock?: { owner: string; expiresAt: Date } | null;
 };
 export type PublishJob = Document & {

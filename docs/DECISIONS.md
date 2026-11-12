@@ -1,6 +1,7 @@
 # ADR — 架構決策與待確認事項
 
 ## 已決策
+
 - ADR-001：公開前台 Astro SSG + Firebase Hosting；避免 CMS 負擔公開流量。
   - 2026-11-05 使用者再次確認沿用 Firebase Hosting；部署由人員手動執行，操作文件列出 Atlas M0、CMS Cloud Run、private GCS 與所有必要支援資源。未改為前台 Cloud Run 架構；自動內容發布仍依 P05-08 另行整合驗證。
 - ADR-002：Payload CMS / Next.js 部署 Cloud Run；不使用 FastAPI。
@@ -10,12 +11,14 @@
 - ADR-005：Cloud Run Direct VPC egress + Cloud NAT 固定出口 IP，Atlas `/32` allowlist。
   - 使用者確認手動部署沿用專案既有 `default` VPC 與同 Region 的既有 subnet，不另建 VPC；NAT 只涵蓋選定 subnet，沿用共用 Router／NAT 前先核對出口與其他服務影響。既有 Terraform 網路資源尚待改為引用模式，本次只調整手冊。
 - ADR-006：Cloud Build 發布 Astro，內容快照不可變，部署序列化。
+  - 2026-11-12 使用者要求完成 P05-08 自動內容發布：沿用交易 outbox，由 Scheduler 週期啟動 Cloud Run Job，Job 以既有 default VPC／NAT 匯出 private 快照，交專用 Cloud Build 建候選，再持有 DB permit 啟用 Firebase。GCP 內採 runtime ADC，不需外部 GitHub WIF／長期 key；新增 Scheduler／Job／Bucket 用量與 Console 啟用步驟見 [自動發布手冊](CLOUD_AUTO_PUBLISHING.md)。未知遠端結果保持 pending 並對帳，不盲目重發。此為既有技術棧內的實作，不改公開 Astro 靜態模式。
 
 - ADR-007：前台選擇風格 D（Developer Blog 首頁 + Editorial Reading 文章頁 + Documentation TOC），採用設計 tokens 與 RWD/可及性驗收；見 UI_UX_SPEC.md、DESIGN_SYSTEM.md、PAGE_WIREFRAMES.md、FRONTEND_ACCEPTANCE.md。
 
 - ADR-008（2026-11-04，使用者明確決策）：先完成全部本機開發與 UAT，才進行雲端測試。Phase 0～4 採 Docker MongoDB、Payload 本機持久化媒體、本機 immutable snapshot 與發布執行器；不依賴雲端帳密或資源。P04-06 通過後才執行 Phase 5 的資源 plan、建置與雲端複驗。原 P00-02 移至 P05-03、P00-03 移至 P05-05、P00-01 的 M0 部分移至 P05-04；發布流程提前至 Phase 4 在本機完成。正式技術棧不變。權衡：雲端限制會較晚實測，需保留 adapter 邊界、待驗清單及修正回歸時間；雲端驗收不通過不得正式上線。
 
 ## 待確認（實作前提出選項）
+
 1. **公開媒體政策**：草稿圖片是否允許被持有 URL 的人讀取？預設採不公開；需設計正式發布圖片的公開路徑。
 2. **CMS 網域**：`admin.example.com` 是否為正式域名？若尚未購買可先使用 Cloud Run URL。
 3. **Markdown 需求**：v1 以 Lexical 編輯；若需 Markdown 原始檔，須設計匯出與轉換。

@@ -16,10 +16,7 @@ steps:
       - _SNAPSHOT_URI=$_SNAPSHOT_URI
       - _SNAPSHOT_SHA256=$_SNAPSHOT_SHA256
       - SITE_URL=$_SITE_URL
+      - _CANDIDATE_BUCKET=$_CANDIDATE_BUCKET
 options:
   logging: CLOUD_LOGGING_ONLY
 timeout: 1200s
-artifacts:
-  objects:
-    location: gs://${_CANDIDATE_BUCKET}/candidates/${_RELEASE_ID}/
-    paths: [.local/cloud-candidate/site/**, .local/cloud-candidate/candidate.json]

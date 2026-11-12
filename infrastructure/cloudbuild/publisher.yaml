@@ -1,0 +1,21 @@
+# Image only. Create/configure the Job manually after reviewing the deployment plan.
+substitutions:
+  _REGION: asia-east1
+  _REPOSITORY: asoball-blog-test-cms
+steps:
+  - name: gcr.io/cloud-builders/docker@sha256:fbc05705e6f24467e40ae8a4097ab9b8fae1116551f838fa2c55f4367427fc36
+    args:
+      [
+        build,
+        --platform=linux/amd64,
+        -f,
+        infrastructure/publisher/Dockerfile,
+        -t,
+        "${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/publisher:$COMMIT_SHA",
+        .,
+      ]
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/publisher:$COMMIT_SHA
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s

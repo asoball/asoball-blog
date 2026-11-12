@@ -243,6 +243,10 @@ export interface Deployment {
   reason?: string | null;
   releaseId?: string | null;
   errorCode?: string | null;
+  buildOperation?: string | null;
+  buildId?: string | null;
+  hostingVersion?: string | null;
+  hostingRelease?: string | null;
   createdAt?: string | null;
   availableAt?: string | null;
 }
@@ -432,6 +436,10 @@ export interface DeploymentsSelect<T extends boolean = true> {
   reason?: T;
   releaseId?: T;
   errorCode?: T;
+  buildOperation?: T;
+  buildId?: T;
+  hostingVersion?: T;
+  hostingRelease?: T;
   createdAt?: T;
   availableAt?: T;
 }

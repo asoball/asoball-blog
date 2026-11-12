@@ -23,6 +23,7 @@ jobs:
       - run: pnpm lint && pnpm typecheck && pnpm test
       - run: pnpm test:integration
       - run: pnpm test:queue && pnpm test:publishing && pnpm test:backup
+      - run: pnpm test:cloud-publishing
       - run: pnpm build
       - run: pnpm publishing:request && pnpm publishing:once
       - run: pnpm exec playwright install --with-deps chromium

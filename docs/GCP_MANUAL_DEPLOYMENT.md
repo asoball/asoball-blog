@@ -275,6 +275,8 @@ Cloud Run 本機檔案系統是暫存；不要掛本機 `.local` 指標或把原
 
 ### 3.9 必要操作：初始化帳號、建置與發布前台
 
+本節是人工發布路線。欲在 CMS Publish 後自動更新 Hosting，改依 [P05-08 自動發布設定手冊](CLOUD_AUTO_PUBLISHING.md) 建立 Job／Scheduler／內容 trigger 與 IAM；完成雲端驗收並啟用後，日常內容不再手動執行本節 B／C。兩種發布模式不得同時運作。
+
 **以下不是 Console 資源設定，但目前程式仍需這些操作機工具步驟。** Firebase Console 本身不能取代 Astro 建置／CLI 發布，CMS 也禁止公開註冊。人員手動執行命令不等於啟用自動部署。
 
 #### A. 準備雲端專用環境並建立管理者
@@ -393,7 +395,7 @@ Console：**Cloud Storage →「值區」→ 媒體 Bucket →「保護」→「
 
 ### 5.3 自動化與額外儲存
 
-CMS Cloud Build trigger 已是第 3.6 節必要建置方式。本節 Optional 是 Astro「內容」自動發布，以及 GitHub Actions、WIF、snapshots／candidates 額外 Bucket。`cms.yaml` 不會發布文章或部署 Firebase；`blog.yaml` 目前也只建前台 candidate。要自動內容發布時依 P05-08 完成 orchestration、去重／序列化／fencing、版本上傳、啟用與不確定結果對帳。
+CMS Cloud Build trigger 已是第 3.6 節必要建置方式。Astro 內容自動發布程式已新增，手動建置／IAM／啟用與驗收詳見 [P05-08 手冊](CLOUD_AUTO_PUBLISHING.md)。自動模式需要 Job、Scheduler、snapshots／candidates private Buckets 與內容 trigger；未啟用者沿用第 3.9 節。`cms.yaml` 不發布文章；`blog.yaml` 僅建 candidate，最終啟用由持有租約的 Job 負責。GCP 內採 runtime ADC，不需 GitHub WIF；未來另接 GitHub Actions 才設定 WIF。
 
 ### 5.4 Firebase 額外功能
 

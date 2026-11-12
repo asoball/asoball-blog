@@ -58,6 +58,8 @@
 - [ ] **P05-06** CMS image 部署測試 Cloud Run。驗收：登入、媒體、cold start、健康檢查、max-instances=1、連線池與 Secrets。
 - [ ] **P05-07** Firebase Hosting 測試站。驗收：靜態首頁/文章/404/HTTPS/SEO；先用測試預設網域，自訂域名依實際設定驗證。
 - [ ] **P05-08** Cloud Build + Firebase 發布、雲端 snapshot 存取、專用 IAM/WIF、Payload hook。沿用本機發布契約與原子狀態設計。驗收：發布/取消發布/刪除 E2E、去重、序列化、重試、較舊 build 拒絕部署與失敗保留舊站。
+  - 2026-11-12：程式已補齊 Scheduler → Cloud Run Job → immutable snapshot → Cloud Build candidate → Firebase Hosting API，包含序號／租約、三次重試、未知啟用結果對帳、CMS 發布資訊與非 root Job image。GCP 內以 runtime ADC 取代不必要的 GitHub WIF，不建立長期 key。
+  - 本機 Docker CMS／Astro／模擬雲端 API 驗證與操作證據見 [自動發布手冊](CLOUD_AUTO_PUBLISHING.md)。Console 資源／IAM、Job image、排程啟用與真實雲端 E2E 待操作者執行，尚不勾選完整雲端驗收。
 - [ ] **P05-09** Hosting rollback、Cloud Run revision rollback。驗收：雲端測試環境演練成功，schema 相容性及資料影響已記錄。
 
 ## Phase 6 — 雲端營運驗收與正式交付
@@ -69,18 +71,17 @@
 
 ## 舊任務對照（本次修訂後以新版定義為準）
 
-| 原任務 | 新位置 |
-|---|---|
-| P00-01 的 M0 真實測試 | P05-04；P00-01 僅本機 PoC |
-| P00-02 NAT／Atlas 網路 | P05-03 |
-| P00-03 GCS | P05-05 |
-| P02-04 GCS 整合 | P02-04 先完成本機媒體；雲端差異在 P05-05 |
-| 原 Phase 4 Infrastructure | 新 Phase 5；CMS image 本機驗證提前至 P04-05 |
-| 原 P05-01／P05-02 snapshot／發布控制 | P04-01／P04-02；雲端複驗在 P05-08 |
-| 原 P05-03 Cloud Build／Firebase | P04-04 準備與本機驗證、P05-08 雲端驗收 |
-| 原 P05-04 hook | P04-03 本機 E2E、P05-08 雲端 E2E |
-| 原 P05-05 rollback | P04-04 本機版本切換、P05-09 雲端回滾 |
-| 原 P06-01 CI／WIF | P01-04 PR CI、P05-08 WIF、P06-01 複驗 |
+| 原任務                               | 新位置                                      |
+| ------------------------------------ | ------------------------------------------- |
+| P00-01 的 M0 真實測試                | P05-04；P00-01 僅本機 PoC                   |
+| P00-02 NAT／Atlas 網路               | P05-03                                      |
+| P00-03 GCS                           | P05-05                                      |
+| P02-04 GCS 整合                      | P02-04 先完成本機媒體；雲端差異在 P05-05    |
+| 原 Phase 4 Infrastructure            | 新 Phase 5；CMS image 本機驗證提前至 P04-05 |
+| 原 P05-01／P05-02 snapshot／發布控制 | P04-01／P04-02；雲端複驗在 P05-08           |
+| 原 P05-03 Cloud Build／Firebase      | P04-04 準備與本機驗證、P05-08 雲端驗收      |
+| 原 P05-04 hook                       | P04-03 本機 E2E、P05-08 雲端 E2E            |
+| 原 P05-05 rollback                   | P04-04 本機版本切換、P05-09 雲端回滾        |
+| 原 P06-01 CI／WIF                    | P01-04 PR CI、P05-08 WIF、P06-01 複驗       |
 
-下一個實作任務：**P05-01**。本次未進入雲端測試或部署；Phase 5～6 保留未完成。
-
+目前工作：**P05-08 程式與本機回歸完成，待依自動發布手冊建置雲端資源／IAM、啟用及真實 E2E 驗收**；接續為 P05-09 雲端回滾演練。其他 Phase 5～6 未取得驗收證據的項目保持未勾選，本次不執行正式部署。

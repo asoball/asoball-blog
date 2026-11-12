@@ -220,6 +220,10 @@ export async function publishingStatus(req: PayloadRequest) {
             attempts: job.attempts,
             errorCode: job.errorCode,
             releaseId: job.releaseId,
+            buildId: job.buildId,
+            buildOperation: job.buildOperation,
+            hostingVersion: job.hostingVersion,
+            hostingRelease: job.hostingRelease,
           }
         : null,
       active: state?.active ?? null,

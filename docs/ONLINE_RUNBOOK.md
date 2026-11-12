@@ -2,6 +2,8 @@
 
 更新：2026-11-12。適用於已完成基礎部署、可以登入 CMS 的日常操作。操作者回報已完成建置；本文提供操作流程，不代替各項雲端驗收證據。初次資源與管理者設定見 [GCP 手動部署手冊](GCP_MANUAL_DEPLOYMENT.md)。
 
+**自動發布模式**：先依 [P05-08 自動發布設定](CLOUD_AUTO_PUBLISHING.md) 建好 Job／Scheduler／IAM 並通過雲端驗收。啟用後，在 CMS 按 Publish 即會於下一輪排程自動建置部署，至 Deployments 查看 queued／running／succeeded／failed；無須每次執行第 5 節。第 5 節保留為尚未啟用或停用自動化後的人工操作方式；切換前須暫停 Scheduler 並確認無執行中工作／pending，不能與自動部署混用。
+
 ## 1. 入口與帳號
 
 | 項目                        | 位置                                                     |
@@ -29,7 +31,7 @@ CMS 入口依目前操作者使用的網址記錄；如有變更，以實際 `CM
 7. 使用 **Preview（預覽）**，檢查已儲存的內容、圖片與排版。預覽需要管理者登入，不是可公開分享的草稿連結，也不代表 Firebase 已上線。
 8. 確認後按 **Publish（發布）**，再依第 5 節部署前台。
 
-**CMS 的 Publish 會將內容設為 published；公開網站只在重新匯出、建置及部署後更新。** 草稿不會出現在公開快照中。首次發布後 slug 永久鎖定，取消發布也不會解鎖，請在首次發布前確認網址。
+**CMS 的 Publish 會將內容設為 published；公開網站只在重新匯出、建置及部署後更新。** 自動化啟用時由雲端工作執行這些步驟，否則按第 5 節人工操作。草稿不會出現在公開快照中。首次發布後 slug 永久鎖定，取消發布也不會解鎖，請在首次發布前確認網址。
 
 ## 3. 編輯、取消發布、版本與刪除
 
@@ -50,7 +52,7 @@ CMS 入口依目前操作者使用的網址記錄；如有變更，以實際 `CM
 - **Media**：上傳 JPEG、PNG、WebP 或 AVIF，每張最多 5 MiB，影像像素上限 4,000 萬，填寫必填 `alt`（最多 300 字元）。只用有權使用的圖片。原圖保存在 private GCS，公開發布僅帶出已發布文章引用的最佳化圖片，不要將 Bucket 改成公開。
 - 刪除媒體前先移除文章封面與正文引用（含草稿），再操作 Delete；引用中的圖片會被保護。更新圖片／alt 後，相關公開內容仍需重新建置部署。
 - **Users**：管理者可管理帳號資料與密碼；避免刪除最後一個管理者。登入連續失敗 5 次會鎖定 10 分鐘，先確認帳密再重試。
-- **Deployments**：記錄 outbox 工作。目前人工 Firebase 發布不會自動將這些紀錄改成 succeeded；應以 Firebase 發布歷程及實際網站驗收判斷是否上線，不手動修改 outbox 狀態。
+- **Deployments**：記錄 outbox 工作。自動發布會回寫 buildOperation／buildId、hostingVersion／hostingRelease 與狀態；重新整理查看進度。人工 Firebase 發布不會自動將這些紀錄改成 succeeded；兩種模式都應核對 Firebase 發布歷程與實際網站，不手動修改 outbox 狀態。
 
 ## 5. 發布 Firebase Hosting 新版本
 

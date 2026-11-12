@@ -1,3 +1,4 @@
+import { z } from "zod";
 export interface ImmutableCloudFile {
   save(
     data: Buffer,
@@ -39,6 +40,58 @@ export interface CloudTransport {
     data?: unknown;
   }): Promise<{ data: unknown }>;
 }
+export async function waitForCloudBuild(
+  plan: CloudPlan,
+  operation: unknown,
+  transport: CloudTransport,
+  options: {
+    ownsLease: () => Promise<boolean>;
+    sleep?: () => Promise<void>;
+    timeoutMs?: number;
+  },
+) {
+  const accepted = z
+    .object({
+      name: z.string().max(500),
+      metadata: z.object({
+        build: z.object({ id: z.string().regex(/^[a-zA-Z0-9-]+$/) }),
+      }),
+    })
+    .parse(operation);
+  const id = accepted.metadata.build.id;
+  const deadline = Date.now() + (options.timeoutMs ?? 22 * 60 * 1000);
+  for (;;) {
+    if (Date.now() > deadline || !(await options.ownsLease()))
+      throw new Error("Build timed out or lease lost.");
+    const build = z
+      .object({
+        id: z.literal(id),
+        status: z.string(),
+        substitutions: z.record(z.string(), z.string()),
+      })
+      .parse(
+        (
+          await transport.request({
+            url: `https://cloudbuild.googleapis.com/v1/projects/${plan.projectId}/locations/${plan.region}/builds/${id}`,
+            method: "GET",
+          })
+        ).data,
+      );
+    if (
+      build.substitutions._SOURCE_SHA !== plan.commitSha ||
+      build.substitutions._RELEASE_ID !== plan.releaseId ||
+      build.substitutions._SNAPSHOT_SHA256 !== plan.snapshotDigest
+    )
+      throw new Error("Build input mismatch.");
+    if (build.status === "SUCCESS") return { id, operation: accepted.name };
+    if (
+      !["STATUS_UNKNOWN", "PENDING", "QUEUED", "WORKING"].includes(build.status)
+    )
+      throw new Error("Cloud Build did not succeed.");
+    await (options.sleep?.() ??
+      new Promise((resolve) => setTimeout(resolve, 10000)));
+  }
+}
 export function validateCloudPlan(plan: CloudPlan) {
   if (
     !/^[a-z0-9][a-z0-9._-]{1,220}[a-z0-9]$/.test(plan.candidateBucket) ||
@@ -78,6 +131,8 @@ export async function submitBuildCandidate(
       url: `https://cloudbuild.googleapis.com/v1/projects/${plan.projectId}/locations/${plan.region}/triggers/${plan.triggerId}:run`,
       method: "POST",
       data: {
+        projectId: plan.projectId,
+        triggerId: plan.triggerId,
         source: {
           commitSha: plan.commitSha,
           substitutions: {

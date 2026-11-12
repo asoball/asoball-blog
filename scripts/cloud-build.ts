@@ -4,6 +4,10 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 import { snapshotSchema, type ContentNode } from "@asoball/content-contract";
 import { buildBlog } from "./build-blog";
+import {
+  makeCandidate,
+  uploadDirectory,
+} from "../packages/publishing/src/cloud-artifacts";
 if (process.env.ALLOW_CLOUD_BUILD !== "true")
   throw new Error("Cloud build is disabled during local development.");
 const source = process.env._SOURCE_SHA,
@@ -53,14 +57,32 @@ for (const url of images) {
   await writeFile(path.join(directory, url), data, { flag: "wx" });
 }
 await buildBlog({ snapshotFile, siteDir: path.join(directory, "site") });
+const candidate = await makeCandidate(path.join(directory, "site"), {
+  commit,
+  sourceSnapshotDigest: digest,
+  releaseId: process.env._RELEASE_ID || "",
+});
 await writeFile(
   path.join(directory, "candidate.json"),
-  JSON.stringify({
-    commit,
-    sourceSnapshotDigest: digest,
-    releaseId: process.env._RELEASE_ID,
-  }),
+  JSON.stringify(candidate),
 );
+const candidateBucket = process.env._CANDIDATE_BUCKET || "";
+if (!/^[a-z0-9][a-z0-9._-]{1,220}[a-z0-9]$/.test(candidateBucket))
+  throw new Error("Invalid candidate bucket.");
+const prefix = `candidates/${candidate.releaseId}`;
+await uploadDirectory(
+  storage,
+  candidateBucket,
+  `${prefix}/site`,
+  path.join(directory, "site"),
+);
+await storage
+  .bucket(candidateBucket)
+  .file(`${prefix}/candidate.json`)
+  .save(JSON.stringify(candidate), {
+    resumable: false,
+    preconditionOpts: { ifGenerationMatch: 0 },
+  });
 console.log(
   "Cloud candidate built and checked. Hosting activation is a separate fenced operation.",
 );
